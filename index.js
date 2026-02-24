@@ -3,7 +3,7 @@ const { DATABASE, VERSION } = require('./config')
 const { stopInstance } = require('./lib/pm2')
 
 const start = async () => {
-  logger.info(`Dex-nova ${VERSION}`)
+  logger.info(`levanter ${VERSION}`)
 
   try {
     await DATABASE.authenticate({ retry: { max: 3 } })
