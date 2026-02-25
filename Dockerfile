@@ -1,5 +1,5 @@
-FROM quay.io/lyfe00011/md:beta
-RUN git clone https://github.com/lyfe00011/levanter.git /root/LyFE/
-WORKDIR /root/LyFE/
+FROM quay.io/Dexsam07/md:beta
+RUN git clone https://github.com/Dexsam07/levanter.git /root/dexsam/
+WORKDIR /root/dexsam/
 RUN yarn install
 CMD ["npm", "start"]
