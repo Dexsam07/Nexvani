@@ -81,7 +81,7 @@ bash <(curl -fsSL http://bit.ly/43JqREw)
 
    ```sh
    git clone https://github.com/Dexsam07/Dex-nova.git botName
-   cd botName
+cd botName
    yarn install
    ```
 
@@ -92,7 +92,7 @@ bash <(curl -fsSL http://bit.ly/43JqREw)
    ```sh
    SESSION_ID=your_session_id_here
    PREFIX=.
-   STICKER_PACKNAME=LyFE
+   STICKER_PACKNAME=Shyam
    ALWAYS_ONLINE=false
    RMBG_KEY=null
    LANGUAG=en

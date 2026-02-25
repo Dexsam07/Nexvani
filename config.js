@@ -13,44 +13,44 @@ module.exports = {
   DATABASE:
     DATABASE_URL === databasePath
       ? new Sequelize({
-          dialect: 'sqlite',
-          storage: DATABASE_URL,
-          logging: false,
-          retry: {
-            max: 10,
+        dialect: 'sqlite',
+        storage: DATABASE_URL,
+        logging: false,
+        retry: {
+          max: 10,
+        },
+        pool: {
+          max: 5,
+          min: 0,
+          acquire: 30000,
+          idle: 10000,
+        },
+        dialectOptions: {
+          busyTimeout: 10000,
+        },
+        hooks: {
+          afterConnect: (conn) => {
+            conn.run('PRAGMA synchronous = NORMAL;')
+            conn.run('PRAGMA busy_timeout = 10000;')
           },
-          pool: {
-            max: 5,
-            min: 0,
-            acquire: 30000,
-            idle: 10000,
-          },
-          dialectOptions: {
-            busyTimeout: 10000,
-          },
-          hooks: {
-            afterConnect: (conn) => {
-              conn.run('PRAGMA synchronous = NORMAL;')
-              conn.run('PRAGMA busy_timeout = 10000;')
-            },
-          },
-        })
+        },
+      })
       : new Sequelize(DATABASE_URL, {
-          dialect: 'postgres',
-          ssl: true,
-          protocol: 'postgres',
-          dialectOptions: {
-            native: true,
-            ssl: { require: true, rejectUnauthorized: false },
-          },
-          logging: false,
-        }),
+        dialect: 'postgres',
+        ssl: true,
+        protocol: 'postgres',
+        dialectOptions: {
+          native: true,
+          ssl: { require: true, rejectUnauthorized: false },
+        },
+        logging: false,
+      }),
   PREFIX: (process.env.PREFIX || '^[.,!]').trim(),
   SUDO: process.env.SUDO || '',
   HEROKU_APP_NAME: process.env.HEROKU_APP_NAME,
   HEROKU_API_KEY: process.env.HEROKU_API_KEY,
   BRANCH: 'master',
-  STICKER_PACKNAME: process.env.STICKER_PACKNAME || '❤️,DEX Nova',  // ← Changed here
+  STICKER_PACKNAME: process.env.STICKER_PACKNAME || '❤️,LyFE',
   ALWAYS_ONLINE: process.env.ALWAYS_ONLINE,
   LOG_MSG: process.env.LOG_MSG || 'false',
   RMBG_KEY: process.env.RMBG_KEY || 'null',
