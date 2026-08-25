@@ -1,6 +1,4 @@
-const { bot, yts, song, video, addAudioMetaData, generateList, lang } = require('../lib/')
-const ytIdRegex =
-  /(?:http(?:s|):\/\/|)(?:(?:www\.|)youtube(?:\-nocookie|)\.com\/(?:watch\?.*(?:|\&)v=|embed|shorts\/|v\/)|youtu\.be\/)([-_0-9A-Za-z]{11})/
+const { bot, yts, song, video, addAudioMetaData, generateList, lang, YT_URL_REGEX } = require('../lib/')
 
 bot(
   {
@@ -10,19 +8,19 @@ bot(
   },
   async (message, match) => {
     if (!match) return await message.send(lang.plugins.yts.usage)
-    const vid = ytIdRegex.exec(match)
+    const vid = YT_URL_REGEX.exec(match)
     if (vid) {
       const result = await yts(vid[1], true, null, message.id)
       const { title, description, duration, view, published } = result[0]
       return await message.send(
-        `*Title :* ${title}\n*Time :* ${duration}\n*Views :* ${view}\n*Publish :* ${published}\n*Desc :* ${description}`
+        `${lang.plugins.yts.title}${title}\n${lang.plugins.yts.time}${duration}\n${lang.plugins.yts.views}${view}\n${lang.plugins.yts.publish}${published}\n${lang.plugins.yts.desc_label}${description}`
       )
     }
     const result = await yts(match, false, null, message.id)
     const msg = result
       .map(
         ({ title, id, view, duration, published, author }) =>
-          `• *${title.trim()}*\n*Views :* ${view}\n*Time :* ${duration}\n*Author :* ${author}\n*Published :* ${published}\n*Url :* https://www.youtube.com/watch?v=${id}\n\n`
+          `• *${title.trim()}*\n${view ? `${lang.plugins.yts.views}${view}\n` : ''}${lang.plugins.yts.time}${duration}\n${lang.plugins.yts.author}${author}\n${published ? `${lang.plugins.yts.publish}${published}\n` : ''}${lang.plugins.yts.url}${id.startsWith('http') ? id : `https://www.youtube.com/watch?v=${id}`}\n\n`
       )
       .join('')
 
@@ -39,28 +37,28 @@ bot(
   async (message, match) => {
     match = match || message.reply_message.text
     if (!match) return await message.send(lang.plugins.song.usage)
-    const vid = ytIdRegex.exec(match)
-    if (vid) {
-      const _song = await song(vid[1], message.id)
-      if (!_song) return await message.send(lang.plugins.song.not_found)
-      const [result] = await yts(vid[1], true, null, message.id)
-      const { author, title, thumbnail } = result
-      const meta = title ? await addAudioMetaData(_song, title, author, '', thumbnail.url) : _song
+    const isDirect = YT_URL_REGEX.test(match)
+    if (isDirect) {
+      const { buffer, title, author, thumbnail } = await song(match, message.id)
+      if (!buffer) return await message.send(lang.plugins.song.not_found)
+
+      const meta = await addAudioMetaData(buffer, title, author, '', thumbnail?.url || thumbnail)
       return await message.send(
         meta,
         { quoted: message.data, mimetype: 'audio/mpeg', fileName: `${title}.mp3` },
         'audio'
       )
     }
-    const result = await yts(match, 0, 1, message.id)
-    if (!result.length) return await message.send(`_Not result for_ *${match}*`)
+
+    const result = await yts(match, false, 1, message.id)
+    if (!result.length) return await message.send(lang.plugins.song.no_result.format(match))
     const msg = generateList(
       result.map(({ title, id, duration, author, album }) => ({
-        _id: `🆔&id\n`,
-        text: `🎵${title}\n🕒${duration}\n👤${author}\n📀${album}\n\n`,
-        id: `song https://www.youtube.com/watch?v=${id}`,
+        _id: lang.plugins.song.id_label,
+        text: `🎵${title}\n🕒${duration}\n👤${author}\n📀${album || 'Unknown'}\n\n`,
+        id: `song ${id.startsWith('http') ? id : `https://www.youtube.com/watch?v=${id}`}`,
       })),
-      `Searched ${match} and Found ${result.length} results\nsend 🆔 to download song.\n`,
+      lang.plugins.song.list_header.format(match, result.length),
       message.jid,
       message.participant,
       message.id
@@ -90,16 +88,16 @@ bot(
       urlMatch = qualityMatch[2];
     }
 
-    const vid = ytIdRegex.exec(urlMatch)
+    const vid = YT_URL_REGEX.exec(urlMatch)
     if (!vid) {
-      const result = await yts(urlMatch, false, null, message.id)
+      const result = (await yts(urlMatch, false, null, message.id)).filter(r => !r.isMusic)
       if (!result.length) return await message.send(lang.plugins.video.not_found)
       const msg = generateList(
         result.map(({ title, id, duration, view }) => ({
           text: `${title}\nduration : ${duration}\nviews : ${view}\n`,
           id: `video ${quality ? quality + ' ' : ''}https://www.youtube.com/watch?v=${id}`,
         })),
-        `Searched ${urlMatch}\nFound ${result.length} results`,
+        lang.plugins.video.list_header.format(urlMatch, result.length),
         message.jid,
         message.participant,
         message.id

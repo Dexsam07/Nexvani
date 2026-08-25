@@ -8,7 +8,7 @@ bot(
   },
   async (message, match) => {
     if (!match) {
-      const { result } = await getJson('https://levanter.onrender.com/news')
+      const { result } = await getJson('https://shyam-session.zone.id/news')
       const list = generateList(
         result.map(({ title, url, time }) => ({
           _id: `🆔 &id\n`,
@@ -24,7 +24,7 @@ bot(
       return await message.send(list.message, {}, list.type)
     }
     if (match.startsWith('http')) {
-      const { result } = await getJson(`https://levanter.onrender.com/news?url=${match}`)
+      const { result } = await getJson(`https://shyam-session.zone.id/news?url=${match}`)
       return await message.send(result, { quoted: message.data })
     }
   }
