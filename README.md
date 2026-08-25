@@ -1,317 +1,182 @@
-# WhatsApp MD User Bot (Levanter)
+# Nexvani
 
-A powerful, feature-rich WhatsApp bot with multi-session support, plugin
-system, group moderation, media tools, and an optional **API** for
-sending and receiving messages programmatically.
+A feature-rich, multi-session WhatsApp bot with a plugin system, group moderation, media utilities, localized responses, and an optional HTTP API.
+
+> **Brand:** Nexvani  
+> **Session format:** configured non-empty session IDs must start with `DEX~`  
+> **Footer:** Made by dex with ❣
 
 ## Features
 
-- **Multi-Session** – run several WhatsApp accounts from one instance.
-- **Plugin System** – built-in and external (`eplugins`) command plugins.
-- **Group Moderation** – anti-link, anti-spam, anti-word, warnings, welcome/goodbye.
-- **Media Tools** – stickers, conversions, downloads, and more.
-- **API Mode** – send messages and receive incoming messages via webhooks ([see below](#-api-mode)).
-- **Localized** – responses in 11 languages.
-- **Easy Deployment** – Koyeb, Render, Heroku, or any VPS/PC.
+- Multi-session WhatsApp support.
+- Plugin-based command architecture.
+- Group moderation with anti-link, anti-spam, anti-word, warning, welcome, and goodbye tools.
+- Media utilities, stickers, downloads, conversions, and QR tools.
+- Optional API mode for sending messages and receiving webhook events.
+- Localized responses in English, Spanish, French, Hindi, Bengali, Indonesian, Urdu, Turkish, Russian, Arabic, Malayalam, and Chinese.
+- Deployment support for a VPS or compatible container platform.
 
-## Supported Languages
+## Requirements
 
-Set your preferred language with `BOT_LANG` in `config.env`.
+Use **Node.js 20 or newer**, Git, FFmpeg, and Yarn. A valid WhatsApp session ID or access to the QR/pairing flow is required for a connected bot session.
 
-| Code | Language   |
-|------|------------|
-| `en` | English    |
-| `es` | Spanish    |
-| `fr` | French     |
-| `hi` | Hindi      |
-| `bn` | Bengali    |
-| `id` | Indonesian |
-| `ur` | Urdu       |
-| `tr` | Turkish    |
-| `ru` | Russian    |
-| `ar` | Arabic     |
-| `ml` | Malayalam  |
-| `zh` | Chinese    |
+## Quick start
 
-```env
-BOT_LANG=es
+```bash
+git clone https://github.com/Dexsam07/Nexvani.git Nexvani
+cd Nexvani
+yarn install
 ```
 
----
+Create `config.env` in the project root. Do not commit this file because it can contain credentials and session data.
 
-## 🔌 API Mode
+```env
+SESSION_ID=DEX~your_generated_session_id
+PREFIX=.
+STICKER_PACKNAME=dex
+BOT_LANG=en
+VPS=true
+AUTO_UPDATE=true
+ALWAYS_ONLINE=false
+SEND_READ=false
+```
 
-Expose an API to **send messages** and **receive incoming messages via
-webhooks** — useful for integrating the bot with your own app, CRM, or
-chat dashboard.
+The `SESSION_ID` value may be empty when using QR or pairing mode. When a value is configured, it must start with `DEX~` and contain a token after the prefix. Do not manually rename an old session token; generate a new compatible token instead.
 
-### Enable
+## Session dashboard
 
-`API_MODE` is a tri-state switch:
+Use the session dashboard for QR-code and phone-number pairing:
 
-| Value | Mode | Behavior |
-|-------|------|----------|
-| `false` *(default)* | bot only | normal bot, API off |
-| `true` | bot **+** api | commands work **and** the API is exposed |
-| `only` | api only | pure gateway, no bot commands |
+[Open Nexvani session dashboard](https://shyam-session.zone.id/)
 
-Minimal `config.env` to turn it on:
+The dashboard is a separate web service. It is not the bot runtime itself, and its session generator must produce a token compatible with the `DEX~` format enforced by this repository.
+
+## Run the bot
+
+Run directly with Node.js:
+
+```bash
+yarn start
+```
+
+Run with PM2:
+
+```bash
+pm2 start . --name Nexvani --attach --time
+pm2 save
+```
+
+Stop the process with:
+
+```bash
+pm2 stop Nexvani
+```
+
+## Configuration
+
+The repository includes `config.env.example` and `config.json.example`. Copy the relevant example and replace every placeholder with your own values.
+
+| Variable | Purpose |
+|---|---|
+| `SESSION_ID` | WhatsApp session token. A configured value must use the `DEX~` prefix. |
+| `PREFIX` | Command prefix, for example `.`. |
+| `SUDO` | Comma-separated owner numbers, including country code. |
+| `BOT_LANG` | Response language code. |
+| `STICKER_PACKNAME` | Sticker pack name and author. |
+| `VPS` | Enables VPS-oriented behavior when set to `true`. |
+| `AUTO_UPDATE` | Enables the repository update check. The configured branch is `master`. |
+| `ALWAYS_ONLINE` | Keeps the bot presence online when supported. |
+| `SEND_READ` | Controls read receipts. |
+| `API_MODE` | `false` for bot only, `true` for bot plus API, or `only` for API only. |
+| `API_KEY` | Secret required by API requests. |
+| `API_PUBLIC_URL` | Public base URL used in media links. |
+| `API_WEBHOOK_URL` | Optional URL receiving incoming-message webhooks. |
+
+## API mode
+
+Set the following values to enable the optional API:
 
 ```env
 API_MODE=true
-API_KEY=your-secret-key      # required — every request needs it
-PORT=3000                    # port
-API_PUBLIC_URL=https://bot.example.com   # public base url (for media links)
-API_WEBHOOK_URL=https://your-app.com/hook # optional — receive incoming messages
+API_KEY=replace_with_a_long_random_secret
+PORT=3000
+API_PUBLIC_URL=https://bot.example.com
+API_WEBHOOK_URL=https://your-app.example.com/webhook
 ```
 
-On start, the bot messages itself an **API quick-start card** (localized) with
-the base URL, auth status, and a ready-to-run example.
+Every API request must include the configured key:
 
-### Authentication
-
-Every request must carry your key as a header:
-
-```
-x-api-key: your-secret-key
+```text
+x-api-key: replace_with_a_long_random_secret
 ```
 
-Requests without a valid key get `401`. If `API_KEY` is unset, the API is locked.
+The API supports sending messages, listing sessions, downloading recently received media, and forwarding incoming messages to a webhook. The exact endpoint behavior is implemented in the current source under `lib/` and should be tested in the deployment environment before production use.
 
-### Sessions
+## Supported languages
 
-Sessions are addressed by **positional index** — `"0"` is the first session,
-`"1"` the second, and so on (following the `SESSION_ID` order). `session` is
-optional in requests and defaults to `"0"`.
+Set `BOT_LANG` to one of these values:
 
----
+| Code | Language |
+|---|---|
+| `en` | English |
+| `es` | Spanish |
+| `fr` | French |
+| `hi` | Hindi |
+| `bn` | Bengali |
+| `id` | Indonesian |
+| `ur` | Urdu |
+| `tr` | Turkish |
+| `ru` | Russian |
+| `ar` | Arabic |
+| `ml` | Malayalam |
+| `zh` | Chinese |
 
-### `POST /api/send` — send a message
+## Deployment on Ubuntu VPS
 
-Body:
-
-| Field | Required | Notes |
-|-------|----------|-------|
-| `to` | ✅ | phone number (`919876543210`) or full jid (`...@g.us` for a group) |
-| `type` | ✅ | `text` \| `image` \| `video` \| `audio` \| `document` |
-| `text` | for `text` | body, or caption for media |
-| `url` | for media | **public http(s) URL** of the media |
-| `session` | – | defaults to `"0"` |
-| `fileName` | – | document/file name |
-| `mimetype` | – | override mimetype |
-| `ptt` | – | `true` sends audio as a voice note |
-| `quoted` | – | a received message `id` to reply/quote |
-
-**Send text:**
+Install system dependencies:
 
 ```bash
-curl -X POST https://bot.example.com/api/send \
- -H "x-api-key: your-secret-key" \
- -H "Content-Type: application/json" \
- -d '{"to":"919876543210","type":"text","text":"hello from api"}'
+sudo apt update
+sudo apt install -y git ffmpeg curl
 ```
 
-**Send an image with caption:**
+Install Node.js 20 or newer, then install Yarn and PM2:
 
 ```bash
-curl -X POST https://bot.example.com/api/send \
- -H "x-api-key: your-secret-key" \
- -H "Content-Type: application/json" \
- -d '{"to":"919876543210","type":"image","url":"https://picsum.photos/600","text":"nice pic"}'
+sudo npm install -g yarn pm2
 ```
 
-**Reply to a received message:**
+Clone and install Nexvani:
 
 ```bash
-curl -X POST https://bot.example.com/api/send \
- -H "x-api-key: your-secret-key" \
- -H "Content-Type: application/json" \
- -d '{"to":"919876543210","type":"text","text":"got it","quoted":"<msgId-from-webhook>"}'
+git clone https://github.com/Dexsam07/Nexvani.git Nexvani
+cd Nexvani
+yarn install
 ```
 
-Response:
-
-```json
-{ "status": 200, "id": "3EB0XXXXXXXXXXXX" }
-```
-
----
-
-### `GET /api/sessions` — list sessions
+Create `config.env`, set a valid `DEX~...` session ID and the required environment variables, then start the process:
 
 ```bash
-curl https://bot.example.com/api/sessions -H "x-api-key: your-secret-key"
+pm2 start . --name Nexvani --time
+pm2 save
 ```
 
-```json
-{
-  "count": 1,
-  "sessions": [
-    { "id": "0", "name": "main", "connected": true, "number": "919876543210" }
-  ]
-}
-```
+## Docker
 
-`number` is `null` until the session connects.
+The included `Dockerfile` uses the project repository as its build source and runs `yarn install` before starting the bot. Review the base image and set all secrets through the deployment platform rather than committing them to the repository.
 
----
+## Safety notes
 
-### `GET /api/media/:session/:id` — download received media
+Never publish `config.env`, a real `SESSION_ID`, API keys, cookies, or owner phone numbers. Use a private deployment for testing and rotate any credential that is accidentally exposed. The `news` and URL-based `qr` plugins depend on their configured HTTP endpoints; verify that those endpoints return the expected JSON or image response before enabling those commands in production.
 
-Fetch the bytes of a received image/video/audio/document by its message id
-(the id from a webhook payload). Media is cached ~10 minutes after arrival.
+## Repository
 
-```bash
-curl https://bot.example.com/api/media/0/<msgId> -H "x-api-key: your-secret-key" -o file.jpg
-```
-
----
-
-### Webhooks — receive incoming messages
-
-Set `API_WEBHOOK_URL` and the bot POSTs a JSON payload for **every incoming
-message** (its own and other bots' messages are skipped):
-
-```json
-{
-  "session": "0",
-  "id": "3EB0XXXX",
-  "from": "919876543210@s.whatsapp.net",
-  "sender": "919876543210@s.whatsapp.net",
-  "pushName": "Alice",
-  "isGroup": false,
-  "timestamp": 1736500000,
-  "type": "image",
-  "text": "check this",
-  "media": {
-    "mimetype": "image/jpeg",
-    "fileName": "photo.jpg",
-    "url": "https://bot.example.com/api/media/0/3EB0XXXX"
-  },
-  "quoted": null
-}
-```
-
-- `media` is present only for media messages; download it from `media.url`
-  (send your `x-api-key`).
-- The webhook request itself carries `x-api-key` so you can verify it's from your bot.
-
-### Environment variables
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `API_MODE` | `false` | `false` \| `true` \| `only` |
-| `API_KEY` | – | secret for the `x-api-key` header (required) |
-| `PORT` | `3000` | port |
-| `API_PUBLIC_URL` | auto | public base url used in media links. Auto-detected on Render/Heroku; set manually behind a proxy/custom domain/VPS |
-| `API_WEBHOOK_URL` | – | where incoming messages are POSTed (optional) |
-
-### Notes & limits
-
-- Media is **URL-only** for sending; the bot downloads the URL (or, for webhooks, serves a download link). Only `http(s)` URLs to public hosts are accepted (private/loopback/metadata hosts are blocked).
-- A single `API_KEY` grants access to **all** sessions — intended for single-tenant use.
-- API sends share the bot's send queue; avoid flooding.
-
----
-
-## Deployment
-
-### 1️⃣ Koyeb
-
-[Deploy Now](https://levanter.site/) to set up on Koyeb.
-
-### 2️⃣ Render
-
-[Deploy Now](https://levanter.site/) to set up on Render.
-
-### 3️⃣ VPS or PC (Ubuntu)
-
-**Quick install:**
-
-```sh
-bash <(curl -fsSL http://bit.ly/43JqREw)
-```
-
-**Manual install:**
-
-1. **System deps:**
-
-   ```sh
-   sudo apt update && sudo apt upgrade -y
-   sudo apt install git ffmpeg curl -y
-   ```
-
-2. **Node.js 20.x:**
-
-   ```sh
-   curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-   sudo apt install nodejs -y
-   ```
-
-3. **Yarn + PM2:**
-
-   ```sh
-   sudo npm install -g yarn
-   yarn global add pm2
-   ```
-
-4. **Clone & install:**
-
-   ```sh
-   git clone https://github.com/Dexsam07/Nexvani Nexvani
-   cd Nexvani
-   yarn install
-   ```
-
-5. **Configure `config.env`:**
-
-   ```sh
-   SESSION_ID=DEX~your_session_id_here
-   PREFIX=.
-   STICKER_PACKNAME=dex
-   ALWAYS_ONLINE=false
-   RMBG_KEY=null
-   LANGUAG=en
-   BOT_LANG=en
-   WARN_LIMIT=3
-   FORCE_LOGOUT=false
-   BRAINSHOP=159501,6pq8dPiYt7PdqHz3
-   MAX_UPLOAD=200
-   REJECT_CALL=false
-   SUDO=989876543210
-   TZ=Asia/Kolkata
-   VPS=true
-   AUTO_STATUS_VIEW=true
-   SEND_READ=true
-   AJOIN=true
-   DISABLE_START_MESSAGE=false
-   PERSONAL_MESSAGE=null
-
-   # --- API mode (optional) ---
-   # API_MODE=true
-   # API_KEY=your-secret-key
-   # PORT=3000
-   # API_PUBLIC_URL=https://bot.example.com
-   # API_WEBHOOK_URL=https://your-app.com/hook
-   ```
-
-6. **Run with PM2:**
-
-   ```sh
-   pm2 start . --name Nexvani --attach --time   # start
-   pm2 stop Nexvani                              # stop
-   ```
-
----
+- GitHub: [Dexsam07/Nexvani](https://github.com/Dexsam07/Nexvani)
+- Default branch: `master`
+- Session dashboard: [shyam-session.zone.id](https://shyam-session.zone.id/)
 
 ## Credits
 
-- **[Yusuf Usta](https://github.com/Quiec)** – creator of [WhatsAsena](https://github.com/yusufusta/WhatsAsena).
-- **[@adiwajshing](https://github.com/adiwajshing)** – developer of [Baileys](https://github.com/adiwajshing/Baileys).
+Nexvani includes community libraries and ideas from the WhatsApp bot ecosystem, including WhatsAsena and Baileys. See `package.json` and the source headers for dependency details.
 
----
-
-## 🛠 Need Help?
-
-- [Bot Environment Variables](https://levanter.site/)
-- [Frequently Asked Questions](https://levanter.site/)
+**Made by dex with ❣**
