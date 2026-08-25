@@ -1,6 +1,7 @@
 const { Sequelize } = require('sequelize')
 const { existsSync } = require('fs')
 const path = require('path')
+const { assertValidSessionId, SESSION_ID_PREFIX } = require('./lib/sessionValidation')
 const configPath = path.join(__dirname, './config.env')
 const databasePath = path.join(__dirname, './database.db')
 if (existsSync(configPath)) require('dotenv').config({ path: configPath })
@@ -16,9 +17,11 @@ const normalizeMode = (raw) => {
   return 'bot'
 }
 const MODE = normalizeMode(process.env.API_MODE)
+const SESSION_ID = assertValidSessionId(process.env.SESSION_ID)
 module.exports = {
   VERSION: require('./package.json').version,
-  SESSION_ID: (process.env.SESSION_ID || '').trim(),
+  SESSION_ID,
+  SESSION_ID_PREFIX,
   DATABASE:
     DATABASE_URL === databasePath
       ? new Sequelize({
