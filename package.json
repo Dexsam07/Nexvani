@@ -8,7 +8,7 @@
     "whatsapp-api",
     "whatsapp-automation",
     "baileys",
-    "levanter",
+    "nexvani",
     "wa-bot",
     "chatbot",
     "bot",
@@ -24,9 +24,9 @@
   ],
   "main": "index.js",
   "scripts": {
-    "start": "pm2 start . --attach --name levanter",
-    "docker": "pm2-runtime start . --name levanter",
-    "stop": "pm2 stop levanter",
+    "start": "pm2 start . --attach --name Nexvani",
+    "docker": "pm2-runtime start . --name Nexvani",
+    "stop": "pm2 stop Nexvani",
     "postinstall": "node -e \"try { require('sharp') } catch (e) { process.exit(1); }\" || yarn add --ignore-engines sharp@0.34.5"
   },
   "author": "",
